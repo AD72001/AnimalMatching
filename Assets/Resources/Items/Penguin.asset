@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11f461db0fd6e1c4a93a72163b515475, type: 3}
   m_Name: Penguin
   m_EditorClassIdentifier: 
-  value: 8
+  value: 30
+  type: FourPiece
   sprite: {fileID: 21300000, guid: e982463e46618b44aab5668cef122b8a, type: 3}

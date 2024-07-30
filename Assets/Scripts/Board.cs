@@ -61,7 +61,8 @@ public sealed class Board : MonoBehaviour
                 tile.x = x;
                 tile.y = y;
 
-                tile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0, ItemDatabase.Items.Length)];
+                // tile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0, ItemDatabase.Items.Length)];
+                tile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0, 4)];
 
                 Tiles[x, y] = tile;
             }  
@@ -140,7 +141,20 @@ public sealed class Board : MonoBehaviour
 
                 await Swap(_selection[0], _selection[1]);
                 
-                if (CanPop()) {
+                if (CanPop() || 
+                    _selection[0].Item.type != "Ordinary" ||
+                    _selection[1].Item.type != "Ordinary") 
+                {
+                    if (_selection[0].Item.type == "FourPiece")
+                    {
+                        await FourTilesPiece(_selection[0]);
+                    }
+
+                    if (_selection[1].Item.type == "FourPiece")
+                    {
+                        await FourTilesPiece(_selection[1]);
+                    }
+
                     await Pop();
                     move -= 1;
                 }
@@ -223,17 +237,36 @@ public sealed class Board : MonoBehaviour
                 var connectedTilesHorizontal = tile.GetConnectedTilesHorizontal();
                 var connectedTilesVertical = tile.GetConnectedTilesVertical();
 
+                var localVerticalList = new List<Tile> { };
+                var localHorizontalList = new List<Tile> { };
+
                 var connectedTiles = new List<Tile> {};
 
-                if (connectedTilesHorizontal.Skip(1).Count() >= 2) {
-                    foreach (var connectedTile in connectedTilesHorizontal) {
+                if (connectedTilesHorizontal.Skip(1).Count() >= 2) 
+                {
+                    foreach (var connectedTile in connectedTilesHorizontal) 
+                    {
                         connectedTiles.Add(connectedTile);
+
+                        localVerticalList = connectedTile.GetConnectedTilesVertical();
+
+                        if (localVerticalList.Skip(1).Count() >= 2) {
+                            connectedTiles.AddRange(localVerticalList );
+                        }
                     }
                 }
 
-                if (connectedTilesVertical.Skip(1).Count() >= 2) {
-                    foreach (var connectedTile in connectedTilesVertical) {
+                else if (connectedTilesVertical.Skip(1).Count() >= 2) 
+                {
+                    foreach (var connectedTile in connectedTilesVertical) 
+                    {
                         connectedTiles.Add(connectedTile);
+
+                        localHorizontalList = connectedTile.GetConnectedTilesHorizontal();
+
+                        if (localHorizontalList.Skip(1).Count() >= 2) {
+                            connectedTiles.AddRange(localHorizontalList);
+                        }
                     }
                 }
 
@@ -241,7 +274,12 @@ public sealed class Board : MonoBehaviour
 
                 var deleteSequence = DOTween.Sequence();
 
-                foreach (var connectedtile in connectedTiles) {
+                var tempTiles = GetAllConnectedTiles(connectedTiles);
+
+                connectedTiles.AddRange(tempTiles);
+
+                foreach (var connectedtile in connectedTiles) 
+                {
                     deleteSequence.Join(connectedtile.icon.transform.DOScale(Vector2.zero, TweenDuration));
                 }
 
@@ -253,9 +291,39 @@ public sealed class Board : MonoBehaviour
 
                 var createdSequence = DOTween.Sequence();
 
-                foreach (var connectedtile in connectedTiles) {
-                    connectedtile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0, ItemDatabase.Items.Length)];
-                    createdSequence.Join(connectedtile.icon.transform.DOScale(Vector3.one, TweenDuration));
+                foreach (var connectedTile in connectedTiles) 
+                {
+                    connectedTile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0, 4)];
+                    createdSequence.Join(connectedTile.icon.transform.DOScale(Vector3.one, TweenDuration));
+                }
+                // Need to add tags to each items
+                Debug.Log($"ConnectedTiles:{connectedTiles.Count}");
+                Debug.Log($"connectedTilesVertical:{connectedTilesVertical.Count}");
+                Debug.Log($"connectedTilesHorizontal:{connectedTilesHorizontal.Count}");
+                Debug.Log($"localVerticalList:{localVerticalList.Count}");
+                Debug.Log($"localHorizontalList:{localHorizontalList.Count}");
+
+                // 4 tile piece
+                if (connectedTilesHorizontal.Count == 4 || connectedTilesVertical.Count == 4) {
+                    connectedTiles[1].Item = ItemDatabase.Items[4];
+                    createdSequence.Join(connectedTiles[1].icon.transform.DOScale(Vector3.one, TweenDuration));
+                }
+                
+                // 5 tile piece
+                if (connectedTilesVertical.Count >= 5 || connectedTilesHorizontal.Count >= 5) {
+                    connectedTiles[connectedTiles.Count/2 + 1].Item = ItemDatabase.Items[5];
+                    createdSequence.Join
+                    (connectedTiles[connectedTilesVertical.Count/2].icon.transform.DOScale(Vector3.one, TweenDuration));
+                }
+                
+                // 2-1-2 tile piece
+                if ((connectedTilesVertical.Count >= 3 && localHorizontalList.Count >= 3) ||
+                    (connectedTilesHorizontal.Count >= 3 && localVerticalList.Count >= 3) ||
+                    (connectedTilesVertical.Count >= 3 && connectedTilesHorizontal.Count >= 3)) 
+                {
+                    connectedTiles[connectedTiles.Count/2].Item = ItemDatabase.Items[6];
+                    createdSequence.Join
+                    (connectedTiles[connectedTiles.Count/2].icon.transform.DOScale(Vector3.one, TweenDuration));
                 }
 
                 await createdSequence.Play().AsyncWaitForCompletion(); ///
@@ -264,6 +332,44 @@ public sealed class Board : MonoBehaviour
                 y = 0;
             }
         }
+    }
+
+    public List<Tile> GetAllConnectedTiles(List<Tile> connectedTiles = null, List<Tile> exclude = null)
+    {
+        var result = new List<Tile> {};
+
+        exclude ??= new List<Tile>() {};
+
+        foreach (var tile in connectedTiles) 
+        {
+            if (tile == null || exclude.Contains(tile)) continue;
+
+            if (tile.Item.type == "Ordinary") continue;
+
+            else if (tile.Item.type == "FourPiece")
+            {
+                result.AddRange(tile.GetEveryTilesHorizontal());
+                result.AddRange(tile.GetEveryTilesVertical());
+            }
+
+            else if (tile.Item.type == "UniversalPiece")
+            {
+                result.AddRange(tile.GetEverySameTiles(Tiles));
+            }
+
+            else if (tile.Item.type == "DoubleThreePiece") 
+            {
+                result.AddRange(tile.GetEveryTilesHorizontal());
+            }
+
+            exclude.Add(tile);
+            result.AddRange(GetAllConnectedTiles(result, exclude));
+        }
+
+        if (result == null)
+            return connectedTiles;
+
+        return result;
     }
 
     public bool CheckForNextMove(Tile[,] Tiles) 
@@ -299,7 +405,46 @@ public sealed class Board : MonoBehaviour
                 }
             }
         }
-        Debug.Log("No swap");
+
         return false;
+    }
+
+    public async Task FourTilesPiece(Tile tile) 
+    {
+        var deleteSequence = DOTween.Sequence();
+        var createdSequence = DOTween.Sequence();
+
+        var deleteTiles = tile.GetEveryTilesVertical();
+        deleteTiles.AddRange(tile.GetEveryTilesHorizontal());
+
+        deleteTiles.AddRange(GetAllConnectedTiles(deleteTiles));
+
+        var totalScore = tile.Item.value;
+
+        foreach (var deleteTile in deleteTiles)
+        {
+            deleteSequence.Join(deleteTile.icon.transform.DOScale(Vector2.zero, TweenDuration));
+            totalScore += deleteTile.Item.value;
+            deleteTile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0,4)];
+            createdSequence.Join(deleteTile.icon.transform.DOScale(Vector3.one, TweenDuration));
+        }
+
+        await deleteSequence.Play().AsyncWaitForCompletion();
+
+        audioSource.PlayOneShot(popSound);
+
+        ScoreCounter.Instance.Score += totalScore;
+
+        await createdSequence.Play().AsyncWaitForCompletion();
+    }
+
+    public void FiveTilesPiece()
+    {
+        return;
+    }
+
+    public void DoubleTwoTilePiece()
+    {
+        return;
     }
 }

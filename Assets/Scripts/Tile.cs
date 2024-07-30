@@ -53,9 +53,29 @@ public sealed class Tile : MonoBehaviour
         }
 
         foreach (var tile in Horizontals) {
-            if (tile == null || exclude.Contains(tile) || tile.Item != Item) continue;
+            if (tile == null || exclude.Contains(tile) || (tile.Item != Item)) continue;
 
             result.AddRange(tile.GetConnectedTilesHorizontal(exclude));
+        }
+
+        return result;
+    }
+
+    public List<Tile> GetEveryTilesHorizontal(List<Tile> exclude = null)
+    {
+        var result = new List<Tile> {this,};
+
+        if (exclude == null) {
+            exclude = new List<Tile> {this,};
+        }
+        else {
+            exclude.Add(this);
+        }
+
+        foreach (var tile in Horizontals) {
+            if (tile == null || exclude.Contains(tile)) continue;
+
+            result.AddRange(tile.GetEveryTilesHorizontal(exclude));
         }
 
         return result;
@@ -73,11 +93,50 @@ public sealed class Tile : MonoBehaviour
         }
 
         foreach (var tile in Verticals) {
-            if (tile == null || exclude.Contains(tile) || tile.Item != Item) continue;
+            if (tile == null || exclude.Contains(tile) || (tile.Item != Item)) continue;
  
             result.AddRange(tile.GetConnectedTilesVertical(exclude));
         }
         
+        return result;
+    }
+
+    public List<Tile> GetEveryTilesVertical(List<Tile> exclude = null)
+    {
+        var result = new List<Tile> {this,};
+
+        if (exclude == null) {
+            exclude = new List<Tile> {this,};
+        }
+        else {
+            exclude.Add(this);
+        }
+
+        foreach (var tile in Verticals) {
+            if (tile == null || exclude.Contains(tile)) continue;
+ 
+            result.AddRange(tile.GetEveryTilesVertical(exclude));
+        }
+        
+        return result;
+    }
+    
+    public List<Tile> GetEverySameTiles(Tile[,] Tiles) 
+    {
+        var result = new List<Tile> {};
+
+        for (var y = 0; y < Board.Instance.height; y++) 
+        {
+            for (var x = 0; x < Board.Instance.width; x++)
+            {
+                var tile = Tiles[x, y];
+
+                if (tile.Item == Item) {
+                    result.Add(tile);
+                }
+            }
+        }
+
         return result;
     }
 

@@ -6,5 +6,6 @@ using UnityEngine;
 public sealed class Item : ScriptableObject
 {
     public int value;
+    public string type;
     public Sprite sprite;
 }
