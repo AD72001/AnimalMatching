@@ -62,6 +62,8 @@ public sealed class Board : MonoBehaviour
                 tile.y = y;
 
                 // tile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0, ItemDatabase.Items.Length)];
+                if (tile.Item != null && tile.Item.type != "Ordinary")
+                    continue;
                 tile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0, 4)];
 
                 Tiles[x, y] = tile;
@@ -149,10 +151,44 @@ public sealed class Board : MonoBehaviour
                     {
                         await FourTilesPiece(_selection[0]);
                     }
+                    else if (_selection[0].Item.type == "DoubleThreePiece")
+                    {
+                        await DoubleThreePiece(_selection[0]);
+                    }
+                    else if (_selection[0].Item.type == "UniversalPiece" 
+                        && _selection[1].Item.type == "Ordinary")
+                    {
+                        await UniversalPiece(_selection[1]);
+                    }
+                    else if (_selection[0].Item.type == "UniversalPiece" 
+                        && _selection[1].Item.type != "Ordinary")
+                    {
+                        await GetAllTilesPiece(_selection[0]);
+                    }
+
+                    if (_selection[0].Item.type == _selection[1].Item.type && _selection[1].Item.type == "UniversalPiece")
+                    {
+                        await GetAllTilesPiece(tile);
+                        await GetAllTilesPiece(tile);
+                    }
 
                     if (_selection[1].Item.type == "FourPiece")
                     {
                         await FourTilesPiece(_selection[1]);
+                    }
+                    else if (_selection[1].Item.type == "UniversalPiece"
+                        && _selection[0].Item.type == "Ordinary")
+                    {
+                        await UniversalPiece(_selection[0]);
+                    }
+                    else if (_selection[1].Item.type == "UniversalPiece"
+                        && _selection[0].Item.type != "Ordinary")
+                    {
+                        await GetAllTilesPiece(_selection[1]);
+                    }
+                    else if (_selection[1].Item.type == "DoubleThreePiece")
+                    {
+                        await DoubleThreePiece(_selection[1]);
                     }
 
                     await Pop();
@@ -240,6 +276,9 @@ public sealed class Board : MonoBehaviour
                 var localVerticalList = new List<Tile> { };
                 var localHorizontalList = new List<Tile> { };
 
+                var maxLocalVerticalList = new List<Tile> { };;
+                var maxLocalHorizontalList = new List<Tile> { };;
+
                 var connectedTiles = new List<Tile> {};
 
                 if (connectedTilesHorizontal.Skip(1).Count() >= 2) 
@@ -250,10 +289,23 @@ public sealed class Board : MonoBehaviour
 
                         localVerticalList = connectedTile.GetConnectedTilesVertical();
 
+                        if (localVerticalList.Count > maxLocalVerticalList.Count)
+                        {
+                            maxLocalVerticalList = localVerticalList;
+                        }
+
                         if (localVerticalList.Skip(1).Count() >= 2) {
-                            connectedTiles.AddRange(localVerticalList );
+                            foreach (var localTile  in localVerticalList) 
+                            {
+                                if (!connectedTiles.Contains(localTile))
+                                {
+                                    connectedTiles.Add(localTile);
+                                }
+                            }
                         }
                     }
+
+                    localVerticalList = maxLocalVerticalList;
                 }
 
                 else if (connectedTilesVertical.Skip(1).Count() >= 2) 
@@ -264,9 +316,22 @@ public sealed class Board : MonoBehaviour
 
                         localHorizontalList = connectedTile.GetConnectedTilesHorizontal();
 
-                        if (localHorizontalList.Skip(1).Count() >= 2) {
-                            connectedTiles.AddRange(localHorizontalList);
+                        if (localHorizontalList.Count > maxLocalHorizontalList.Count)
+                        {
+                            maxLocalHorizontalList = localHorizontalList;
                         }
+
+                        if (localHorizontalList.Skip(1).Count() >= 2) {
+                            foreach (var localTile in localHorizontalList)
+                            {
+                                if (!connectedTiles.Contains(localTile))
+                                {
+                                    connectedTiles.Add(localTile);
+                                }
+                            }
+                        }
+
+                        localHorizontalList = maxLocalHorizontalList;
                     }
                 }
 
@@ -297,11 +362,6 @@ public sealed class Board : MonoBehaviour
                     createdSequence.Join(connectedTile.icon.transform.DOScale(Vector3.one, TweenDuration));
                 }
                 // Need to add tags to each items
-                Debug.Log($"ConnectedTiles:{connectedTiles.Count}");
-                Debug.Log($"connectedTilesVertical:{connectedTilesVertical.Count}");
-                Debug.Log($"connectedTilesHorizontal:{connectedTilesHorizontal.Count}");
-                Debug.Log($"localVerticalList:{localVerticalList.Count}");
-                Debug.Log($"localHorizontalList:{localHorizontalList.Count}");
 
                 // 4 tile piece
                 if (connectedTilesHorizontal.Count == 4 || connectedTilesVertical.Count == 4) {
@@ -313,18 +373,24 @@ public sealed class Board : MonoBehaviour
                 if (connectedTilesVertical.Count >= 5 || connectedTilesHorizontal.Count >= 5) {
                     connectedTiles[connectedTiles.Count/2 + 1].Item = ItemDatabase.Items[5];
                     createdSequence.Join
-                    (connectedTiles[connectedTilesVertical.Count/2].icon.transform.DOScale(Vector3.one, TweenDuration));
+                    (connectedTiles[connectedTilesVertical.Count/2 + 1].icon.transform.DOScale(Vector3.one, TweenDuration));
                 }
                 
                 // 2-1-2 tile piece
-                if ((connectedTilesVertical.Count >= 3 && localHorizontalList.Count >= 3) ||
-                    (connectedTilesHorizontal.Count >= 3 && localVerticalList.Count >= 3) ||
+                if ((connectedTilesVertical.Count >= 3 && localHorizontalList.Count() >= 3) ||
+                    (connectedTilesHorizontal.Count >= 3 && localVerticalList.Count() >= 3) ||
                     (connectedTilesVertical.Count >= 3 && connectedTilesHorizontal.Count >= 3)) 
                 {
-                    connectedTiles[connectedTiles.Count/2].Item = ItemDatabase.Items[6];
+                    connectedTiles[0].Item = ItemDatabase.Items[6];
                     createdSequence.Join
-                    (connectedTiles[connectedTiles.Count/2].icon.transform.DOScale(Vector3.one, TweenDuration));
+                    (connectedTiles[0].icon.transform.DOScale(Vector3.one, TweenDuration));
                 }
+                
+                Debug.Log($"ConnectedTiles:{connectedTiles.Count}");
+                Debug.Log($"connectedTilesVertical:{connectedTilesVertical.Count}");
+                Debug.Log($"connectedTilesHorizontal:{connectedTilesHorizontal.Count}");
+                Debug.Log($"localVerticalList:{localVerticalList.Count}");
+                Debug.Log($"localHorizontalList:{localHorizontalList.Count}");
 
                 await createdSequence.Play().AsyncWaitForCompletion(); ///
 
@@ -348,13 +414,12 @@ public sealed class Board : MonoBehaviour
 
             else if (tile.Item.type == "FourPiece")
             {
-                result.AddRange(tile.GetEveryTilesHorizontal());
                 result.AddRange(tile.GetEveryTilesVertical());
             }
 
             else if (tile.Item.type == "UniversalPiece")
             {
-                result.AddRange(tile.GetEverySameTiles(Tiles));
+                result.AddRange(tile.GetEverySameTiles());
             }
 
             else if (tile.Item.type == "DoubleThreePiece") 
@@ -412,10 +477,9 @@ public sealed class Board : MonoBehaviour
     public async Task FourTilesPiece(Tile tile) 
     {
         var deleteSequence = DOTween.Sequence();
-        var createdSequence = DOTween.Sequence();
+        var createSequence = DOTween.Sequence();
 
         var deleteTiles = tile.GetEveryTilesVertical();
-        deleteTiles.AddRange(tile.GetEveryTilesHorizontal());
 
         deleteTiles.AddRange(GetAllConnectedTiles(deleteTiles));
 
@@ -426,7 +490,7 @@ public sealed class Board : MonoBehaviour
             deleteSequence.Join(deleteTile.icon.transform.DOScale(Vector2.zero, TweenDuration));
             totalScore += deleteTile.Item.value;
             deleteTile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0,4)];
-            createdSequence.Join(deleteTile.icon.transform.DOScale(Vector3.one, TweenDuration));
+            createSequence.Join(deleteTile.icon.transform.DOScale(Vector3.one, TweenDuration));
         }
 
         await deleteSequence.Play().AsyncWaitForCompletion();
@@ -435,16 +499,85 @@ public sealed class Board : MonoBehaviour
 
         ScoreCounter.Instance.Score += totalScore;
 
-        await createdSequence.Play().AsyncWaitForCompletion();
+        await createSequence.Play().AsyncWaitForCompletion();
     }
 
-    public void FiveTilesPiece()
+    public async Task UniversalPiece(Tile tile)
     {
-        return;
+        var deleteSequence = DOTween.Sequence();
+        var createSequence = DOTween.Sequence();
+
+        var deleteTiles = tile.GetEverySameTiles();
+
+        var totalScore = tile.Item.value;
+
+        foreach (var deleteTile in deleteTiles)
+        {
+            deleteSequence.Join(deleteTile.icon.transform.DOScale(Vector2.zero, TweenDuration));
+            totalScore += deleteTile.Item.value;
+            deleteTile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0,4)];
+            createSequence.Join(deleteTile.icon.transform.DOScale(Vector3.one, TweenDuration));
+        }
+
+        await deleteSequence.Play().AsyncWaitForCompletion();
+
+        audioSource.PlayOneShot(popSound);
+
+        ScoreCounter.Instance.Score += totalScore;
+
+        await createSequence.Play().AsyncWaitForCompletion();
     }
 
-    public void DoubleTwoTilePiece()
+    public async Task GetAllTilesPiece(Tile tile)
     {
-        return;
+        var deleteSequence = DOTween.Sequence();
+        var createSequence = DOTween.Sequence();
+
+        var totalScore = tile.Item.value;
+
+        foreach (var deleteTile in Tiles)
+        {
+            deleteSequence.Join(deleteTile.icon.transform.DOScale(Vector2.zero, TweenDuration));
+            totalScore += deleteTile.Item.value;
+            deleteTile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0,4)];
+            createSequence.Join(deleteTile.icon.transform.DOScale(Vector3.one, TweenDuration));
+        }
+
+        await deleteSequence.Play().AsyncWaitForCompletion();
+
+        audioSource.PlayOneShot(popSound);
+
+        ScoreCounter.Instance.Score += totalScore;
+
+        await createSequence.Play().AsyncWaitForCompletion();
+    }
+
+    public async Task DoubleThreePiece(Tile tile)
+    {
+        
+        var deleteSequence = DOTween.Sequence();
+        var createSequence = DOTween.Sequence();
+
+        var deleteTiles = tile.GetEveryTilesHorizontal();
+
+        deleteTiles.AddRange(GetAllConnectedTiles(deleteTiles));
+
+        var totalScore = tile.Item.value;
+
+        foreach (var deleteTile in deleteTiles)
+        {
+            deleteSequence.Join(deleteTile.icon.transform.DOScale(Vector2.zero, TweenDuration));
+            totalScore += deleteTile.Item.value;
+            deleteTile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0,4)];
+            createSequence.Join(deleteTile.icon.transform.DOScale(Vector3.one, TweenDuration));
+        }
+
+        await deleteSequence.Play().AsyncWaitForCompletion();
+
+        audioSource.PlayOneShot(popSound);
+
+        ScoreCounter.Instance.Score += totalScore;
+
+        await createSequence.Play().AsyncWaitForCompletion();
     }
 }

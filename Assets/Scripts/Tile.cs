@@ -121,7 +121,7 @@ public sealed class Tile : MonoBehaviour
         return result;
     }
     
-    public List<Tile> GetEverySameTiles(Tile[,] Tiles) 
+    public List<Tile> GetEverySameTiles() 
     {
         var result = new List<Tile> {};
 
@@ -129,7 +129,7 @@ public sealed class Tile : MonoBehaviour
         {
             for (var x = 0; x < Board.Instance.width; x++)
             {
-                var tile = Tiles[x, y];
+                var tile = Board.Instance.Tiles[x, y];
 
                 if (tile.Item == Item) {
                     result.Add(tile);
