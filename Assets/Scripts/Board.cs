@@ -19,6 +19,7 @@ public sealed class Board : MonoBehaviour
     [SerializeField] private AudioClip popSound;
     [SerializeField] private AudioSource audioSource;
     public static int move; // number of moves.
+    public static int goal;
     public static bool hasNextMove = false;
 
     public Row[] rows;
@@ -52,6 +53,7 @@ public sealed class Board : MonoBehaviour
         }
 
         move = MoveCounter.Instance.Move;
+        goal = Goal.Instance.GoalScore;
     }
 
     // The function to shuffle the board. Doesn't shuffle the tiles with a special item.
@@ -86,6 +88,18 @@ public sealed class Board : MonoBehaviour
         if (!CheckForNextMove(Tiles)) 
         {
             CreateNewBoard();
+        }
+
+        // Switch to Game Over scene
+        if (move <= 0)
+        {
+            Debug.Log("You Lose!");
+        }
+
+        // Switch to Victory scene
+        if (ScoreCounter.Instance.Score >= goal)
+        {
+            Debug.Log("You Win!");
         }
     }
 
