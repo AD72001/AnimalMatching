@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
+// Score Counter for the game.
 public sealed class ScoreCounter : MonoBehaviour
 {
     public static ScoreCounter Instance {get ; private set; }
@@ -26,6 +27,4 @@ public sealed class ScoreCounter : MonoBehaviour
     private void Awake() {
         Instance = this;
     }
-
-
 }

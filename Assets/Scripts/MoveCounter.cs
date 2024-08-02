@@ -3,20 +3,21 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
+// Move Counter for the game.
 public sealed class MoveCounter : MonoBehaviour
 {
     public static MoveCounter Instance { get; private set; }
 
-    private int _move;
+    public int move;
 
     public int Move {
-        get => _move;
+        get => move;
 
         set {
-            if (_move == value) return;
-            _move = value;
+            if (move == value) return;
+            move = value;
 
-            moveText.SetText($"Move: {_move}");
+            moveText.SetText($"Move: {move}");
         }
     }
 

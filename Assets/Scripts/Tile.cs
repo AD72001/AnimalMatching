@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+// Contains logic for the tiles. A tile contains a coordinate, an item, an icon and a button.
 public sealed class Tile : MonoBehaviour
 {
     public int x, y;
@@ -41,6 +42,7 @@ public sealed class Tile : MonoBehaviour
         Right
     };
 
+    // Recursive function to get all tiles that is the same as the current tile in a row.
     public List<Tile> GetConnectedTilesHorizontal(List<Tile> exclude = null)
     {
         var result = new List<Tile> {this,};
@@ -61,6 +63,7 @@ public sealed class Tile : MonoBehaviour
         return result;
     }
 
+    // Recursive function to get all tiles in the same row with the current tile.
     public List<Tile> GetEveryTilesHorizontal(List<Tile> exclude = null)
     {
         var result = new List<Tile> {this,};
@@ -81,6 +84,7 @@ public sealed class Tile : MonoBehaviour
         return result;
     }
 
+    // Recursive function to get all tiles that is the same as the current tile in a column.
     public List<Tile> GetConnectedTilesVertical(List<Tile> exclude = null)
     {
         var result = new List<Tile> {this,};
@@ -101,6 +105,7 @@ public sealed class Tile : MonoBehaviour
         return result;
     }
 
+    // Recursive function to get all tiles in the same column with the current tile.
     public List<Tile> GetEveryTilesVertical(List<Tile> exclude = null)
     {
         var result = new List<Tile> {this,};
@@ -121,6 +126,7 @@ public sealed class Tile : MonoBehaviour
         return result;
     }
     
+    // Function to get every tiles in the board that is the same as the current tile.
     public List<Tile> GetEverySameTiles() 
     {
         var result = new List<Tile> {};
