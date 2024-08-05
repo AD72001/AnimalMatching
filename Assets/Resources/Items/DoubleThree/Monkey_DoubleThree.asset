@@ -10,8 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 11f461db0fd6e1c4a93a72163b515475, type: 3}
-  m_Name: Monkey
+  m_Name: Monkey_DoubleThree
   m_EditorClassIdentifier: 
-  value: 20
-  type: Ordinary
-  sprite: {fileID: 21300000, guid: 19be29ec5b63de54bbcec6acac447ac3, type: 3}
+  key: Monkey
+  value: 100
+  type: DoubleThreePiece
+  sprite: {fileID: 21300000, guid: a79269ce92ab3f249bf9cb7bb81dd8b2, type: 3}

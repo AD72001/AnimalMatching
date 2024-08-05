@@ -34,6 +34,8 @@ public sealed class Board : MonoBehaviour
 
     private bool _isProgressing = false; // Return true when the swapping action is being performed.
 
+    private bool _firstShuffle = true;
+
     // Creates a random new board, if the new board doesn't contain any legit move then shuffle the board.
     private void Start()
     {
@@ -42,6 +44,8 @@ public sealed class Board : MonoBehaviour
         Tiles = new Tile[rows.Max(row => row.tiles.Length), rows.Length];
 
         Tiles = Shuffle();
+
+        _firstShuffle = false;
 
         CheckForNextMove(Tiles);
 
@@ -72,7 +76,7 @@ public sealed class Board : MonoBehaviour
                 tile.x = x;
                 tile.y = y;
 
-                if (tile.Item != null && tile.Item.type != "Ordinary")
+                if (tile.Item != null && tile.Item.type != "Ordinary" && _firstShuffle == false)
                     continue;
                 tile.Item = ItemDatabase.Items[UnityEngine.Random.Range(0, 4)];
 
@@ -173,28 +177,14 @@ public sealed class Board : MonoBehaviour
                 /* 
                 Check if player's move lead to a pop. Conditions for pop are:
                     -- Three or more tiles are connected vertically or horizontally.
-                    -- A special tile is chosen.
+                    -- Universal tile is chosen.
                 After the pop is finished. Numbers of moves are reduced by one.
 
                 Swap the tiles to the original positions if conditions are not met.
                 */
-                if (_selection[0].GetConnectedTilesHorizontal().Count() >= 3 ||
-                    _selection[0].GetConnectedTilesVertical().Count() >= 3 ||
-                    _selection[1].GetConnectedTilesHorizontal().Count() >= 3 ||
-                    _selection[1].GetConnectedTilesVertical().Count() >= 3 ||
-                    _selection[0].Item.type != "Ordinary" ||
-                    _selection[1].Item.type != "Ordinary") 
+                if (CanPop()) 
                 {
-
-                    if (_selection[0].Item.type == "FourPiece")
-                    {
-                        await FourTilesPiece(_selection[0]);
-                    }
-                    else if (_selection[0].Item.type == "DoubleThreePiece")
-                    {
-                        await DoubleThreePiece(_selection[0]);
-                    }
-                    else if (_selection[0].Item.type == "UniversalPiece" 
+                    if (_selection[0].Item.type == "UniversalPiece" 
                         && _selection[1].Item.type == "Ordinary")
                     {
                         await UniversalPiece(_selection[1]);
@@ -211,25 +201,17 @@ public sealed class Board : MonoBehaviour
                         await GetAllTilesPiece(tile);
                     }
 
-                    if (_selection[1].Item.type == "FourPiece")
-                    {
-                        await FourTilesPiece(_selection[1]);
-                    }
-                    else if (_selection[1].Item.type == "UniversalPiece"
+                    if (_selection[1].Item.type == "UniversalPiece"
                         && _selection[0].Item.type == "Ordinary")
                     {
                         await UniversalPiece(_selection[0]);
                     }
-                    else if (_selection[1].Item.type == "UniversalPiece"
+                    else if (_selection[1].Item.type == "UniversalPiece" 
                         && _selection[0].Item.type != "Ordinary")
                     {
                         await GetAllTilesPiece(_selection[1]);
                     }
-                    else if (_selection[1].Item.type == "DoubleThreePiece")
-                    {
-                        await DoubleThreePiece(_selection[1]);
-                    }
-
+    
                     await Pop();
                     move -= 1;
                 }
@@ -299,7 +281,7 @@ public sealed class Board : MonoBehaviour
                     return true;
                 }
 
-                if (Tiles[x, y].Item.type != "Ordinary")
+                if (Tiles[x, y].Item.type == "UniversalPiece")
                 {
                     return true;
                 }
@@ -350,7 +332,7 @@ public sealed class Board : MonoBehaviour
                         }
 
                         if (localVerticalList.Skip(1).Count() >= 2) {
-                            foreach (var localTile  in localVerticalList) 
+                            foreach (var localTile in localVerticalList) 
                             {
                                 if (!connectedTiles.Contains(localTile))
                                 {
@@ -401,6 +383,8 @@ public sealed class Board : MonoBehaviour
 
                 connectedTiles.AddRange(tempTiles);
 
+                var tileName = connectedTiles[0].Item.name; // Gets the name of the tiles being pop.
+
                 foreach (var connectedtile in connectedTiles) 
                 {
                     deleteSequence.Join(connectedtile.icon.transform.DOScale(Vector2.zero, TweenDuration));
@@ -425,7 +409,11 @@ public sealed class Board : MonoBehaviour
                 // 4 tile piece
                 if (connectedTilesHorizontal.Count == 4 || connectedTilesVertical.Count == 4 ||
                     localHorizontalList.Count == 4 || localVerticalList.Count == 4) {
-                    connectedTiles[1].Item = ItemDatabase.Items[4];
+    
+                    var itemIndex = findIndexItem(ItemDatabase.FourPieceItems, tileName + "_FourPiece");
+
+                    connectedTiles[1].Item = ItemDatabase.FourPieceItems[itemIndex];
+                    // connectedTiles[1].Item = ItemDatabase.Items[4];
                     createdSequence.Join(connectedTiles[1].icon.transform.DOScale(Vector3.one, TweenDuration));
                 }
                 
@@ -442,7 +430,10 @@ public sealed class Board : MonoBehaviour
                     (connectedTilesHorizontal.Count >= 3 && localVerticalList.Count() >= 3) ||
                     (connectedTilesVertical.Count >= 3 && connectedTilesHorizontal.Count >= 3)) 
                 {
-                    connectedTiles[0].Item = ItemDatabase.Items[6];
+                    Debug.Log(tileName + "_DoubleThree");
+                    var itemIndex = findIndexItem(ItemDatabase.DoubleThreeItems, tileName + "_DoubleThree");
+
+                    connectedTiles[0].Item = ItemDatabase.DoubleThreeItems[itemIndex];
                     createdSequence.Join
                     (connectedTiles[0].icon.transform.DOScale(Vector3.one, TweenDuration));
                 }
@@ -622,7 +613,6 @@ public sealed class Board : MonoBehaviour
     // Process the special double-three item (2-1-2, T, L). When this item is triggered, a row of items is cleared.
     public async Task DoubleThreePiece(Tile tile)
     {
-        
         var deleteSequence = DOTween.Sequence();
         var createSequence = DOTween.Sequence();
 
@@ -647,5 +637,17 @@ public sealed class Board : MonoBehaviour
         ScoreCounter.Instance.Score += totalScore;
 
         await createSequence.Play().AsyncWaitForCompletion();
+    }
+
+    // Find index of item in ItemDatabase' lists.
+    public static int findIndexItem(Item[] Items, string name) 
+    {
+        Debug.Log($"Name: {name}");
+        for (var index=0; index < Items.Count(); index++)
+        {
+            Debug.Log($"IName: {Items[index].name}");
+            if (Items[index].name == name) return index;
+        }
+        return -1;
     }
 }

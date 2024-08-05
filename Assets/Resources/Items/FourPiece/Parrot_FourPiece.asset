@@ -10,8 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 11f461db0fd6e1c4a93a72163b515475, type: 3}
-  m_Name: Pig
+  m_Name: Parrot_FourPiece
   m_EditorClassIdentifier: 
-  value: 150
-  type: UniversalPiece
-  sprite: {fileID: 21300000, guid: 0b74526da9456e44690a97edc79499ea, type: 3}
+  key: Parrot
+  value: 80
+  type: FourPiece
+  sprite: {fileID: 21300000, guid: 491628e02ea0f714994caba7fd51dcf3, type: 3}

@@ -55,7 +55,7 @@ public sealed class Tile : MonoBehaviour
         }
 
         foreach (var tile in Horizontals) {
-            if (tile == null || exclude.Contains(tile) || (tile.Item != Item)) continue;
+            if (tile == null || exclude.Contains(tile) || (tile.Item.key != Item.key)) continue;
 
             result.AddRange(tile.GetConnectedTilesHorizontal(exclude));
         }
@@ -97,7 +97,7 @@ public sealed class Tile : MonoBehaviour
         }
 
         foreach (var tile in Verticals) {
-            if (tile == null || exclude.Contains(tile) || (tile.Item != Item)) continue;
+            if (tile == null || exclude.Contains(tile) || (tile.Item.key != Item.key)) continue;
  
             result.AddRange(tile.GetConnectedTilesVertical(exclude));
         }
