@@ -8,23 +8,25 @@ public sealed class Goal : MonoBehaviour
 {
     public static Goal Instance {get ; private set; }
 
-    public int goal;
+    [SerializeField] public int goal;
 
     public int GoalScore {
         get => goal;
 
-        set {
+        set 
+        {
             if (goal == value) return;
 
             goal = value;
-
-            goalText.SetText($"Goal: {goal}");
         }
+        
     }
 
     [SerializeField] private TextMeshProUGUI goalText;
 
     private void Awake() {
         Instance = this;
+
+        goalText.SetText($"Goal: {goal}");
     }
 }

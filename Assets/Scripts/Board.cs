@@ -3,14 +3,13 @@
 // The goal is to match three or more tiles together to earn points. A goal is set at the beginning of the stage.
 // The game is lost when the player run out of moves without achieving the goal.
 
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
 using DG.Tweening;
 using System.Threading.Tasks;
-using UnityEngine.SocialPlatforms.Impl;
+using UnityEngine.SceneManagement;
 
 public sealed class Board : MonoBehaviour
 {
@@ -19,7 +18,7 @@ public sealed class Board : MonoBehaviour
     [SerializeField] private AudioClip popSound;
     [SerializeField] private AudioSource audioSource;
     public static int move; // number of moves.
-    public static int goal;
+    public static int goal; // goal of the stage.
     public static bool hasNextMove = false;
 
     public Row[] rows;
@@ -38,6 +37,8 @@ public sealed class Board : MonoBehaviour
     // Creates a random new board, if the new board doesn't contain any legit move then shuffle the board.
     private void Start()
     {
+        // GameObject.FindGameObjectWithTag("BGM").GetComponent<BGMusic>().PlayMusic();
+
         Tiles = new Tile[rows.Max(row => row.tiles.Length), rows.Length];
 
         Tiles = Shuffle();
@@ -83,23 +84,25 @@ public sealed class Board : MonoBehaviour
     }
 
     // Check if the board contains any move. Shuffle the board in case of no move possible left.
-    public void Update() 
+    public void Update()
     {
-        if (!CheckForNextMove(Tiles)) 
+        if (!CheckForNextMove(Tiles))
         {
             CreateNewBoard();
         }
 
         // Switch to Game Over scene
-        if (move <= 0)
+        if (move <= 0 && !_isProgressing)
         {
             Debug.Log("You Lose!");
+            SceneManager.LoadScene("GameOverScene");
         }
 
         // Switch to Victory scene
-        if (ScoreCounter.Instance.Score >= goal)
+        if (ScoreCounter.Instance.Score >= goal && !_isProgressing)
         {
             Debug.Log("You Win!");
+            SceneManager.LoadScene("VictoryScene");
         }
     }
 
@@ -420,13 +423,15 @@ public sealed class Board : MonoBehaviour
                 // Need to add type to each items
 
                 // 4 tile piece
-                if (connectedTilesHorizontal.Count == 4 || connectedTilesVertical.Count == 4) {
+                if (connectedTilesHorizontal.Count == 4 || connectedTilesVertical.Count == 4 ||
+                    localHorizontalList.Count == 4 || localVerticalList.Count == 4) {
                     connectedTiles[1].Item = ItemDatabase.Items[4];
                     createdSequence.Join(connectedTiles[1].icon.transform.DOScale(Vector3.one, TweenDuration));
                 }
                 
                 // 5 tile piece or higher
-                if (connectedTilesVertical.Count >= 5 || connectedTilesHorizontal.Count >= 5) {
+                if (connectedTilesVertical.Count >= 5 || connectedTilesHorizontal.Count >= 5 ||
+                    localVerticalList.Count >= 5 || localHorizontalList.Count >= 5) {
                     connectedTiles[connectedTiles.Count/2 + 1].Item = ItemDatabase.Items[5];
                     createdSequence.Join
                     (connectedTiles[connectedTilesVertical.Count/2 + 1].icon.transform.DOScale(Vector3.one, TweenDuration));
@@ -587,12 +592,15 @@ public sealed class Board : MonoBehaviour
     }
 
     // Clear the entire board, triggered when paired an universal-tiles item and a special item.
-    public async Task GetAllTilesPiece(Tile tile)
+    public async Task GetAllTilesPiece(Tile tile = null)
     {
         var deleteSequence = DOTween.Sequence();
         var createSequence = DOTween.Sequence();
 
-        var totalScore = tile.Item.value;
+        var totalScore = 0;
+
+        if (tile != null)
+            totalScore = tile.Item.value;
 
         foreach (var deleteTile in Tiles)
         {
