@@ -187,7 +187,7 @@ public sealed class Board : MonoBehaviour
                     if (_selection[0].Item.type == "UniversalPiece" 
                         && _selection[1].Item.type == "Ordinary")
                     {
-                        await UniversalPiece(_selection[1]);
+                        await UniversalPiece(_selection[1], _selection[0]);
                     }
                     else if (_selection[0].Item.type == "UniversalPiece" 
                         && _selection[1].Item.type != "Ordinary")
@@ -204,7 +204,7 @@ public sealed class Board : MonoBehaviour
                     if (_selection[1].Item.type == "UniversalPiece"
                         && _selection[0].Item.type == "Ordinary")
                     {
-                        await UniversalPiece(_selection[0]);
+                        await UniversalPiece(_selection[0], _selection[1]);
                     }
                     else if (_selection[1].Item.type == "UniversalPiece" 
                         && _selection[0].Item.type != "Ordinary")
@@ -554,7 +554,7 @@ public sealed class Board : MonoBehaviour
     all items that is the same as the ordinary item are cleared.
     -- If a special item is paired with universal-tiles item, clear entire board.
     */
-    public async Task UniversalPiece(Tile tile)
+    public async Task UniversalPiece(Tile tile, Tile specialTile)
     {
         var deleteSequence = DOTween.Sequence();
         var createSequence = DOTween.Sequence();
@@ -562,8 +562,10 @@ public sealed class Board : MonoBehaviour
         var deleteTiles = tile.GetEverySameTiles();
 
         deleteTiles.Add(tile);
+        deleteTiles.Add(specialTile);
 
         var totalScore = tile.Item.value;
+        totalScore += specialTile.Item.value;
 
         foreach (var deleteTile in deleteTiles)
         {
@@ -583,7 +585,7 @@ public sealed class Board : MonoBehaviour
     }
 
     // Clear the entire board, triggered when paired an universal-tiles item and a special item.
-    public async Task GetAllTilesPiece(Tile tile = null)
+    public async Task GetAllTilesPiece(Tile tile, Tile specialTile = null)
     {
         var deleteSequence = DOTween.Sequence();
         var createSequence = DOTween.Sequence();
@@ -591,7 +593,10 @@ public sealed class Board : MonoBehaviour
         var totalScore = 0;
 
         if (tile != null)
-            totalScore = tile.Item.value;
+            totalScore += tile.Item.value;
+        
+        if (specialTile != null)
+            totalScore += specialTile.Item.value;
 
         foreach (var deleteTile in Tiles)
         {
